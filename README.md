@@ -58,7 +58,36 @@ enc = AES
 ```
 **Target** - Run a dictionary attack or brute force attack to obtain the password for admin@test.com
 
+
+## Hints
+### Level 1
+1. Use the burp proxy filter feature to find references of the login url in the js file.
+2. The application uses AES encryption with hardcoded keys
+
+### Level 2
+1. Use the burp proxy filter feature to find references of the login url in the js file.
+2. Application uses AES encryption with dynamic key and IV.
+3. Application sends Key and IV in the requests headers
+
+### Level 3
+1. Use the burp proxy filter feature to find references of the login url in the js file.
+2. Application uses RSA encryption.
+3. Use Breakpoints in the browser developer console.
+
+### Level 4
+1. Use the burp proxy filter feature to find references of the login url in the js file.
+2. Application uses AES encryption and encrypts the Key and IV with RSA encryption
+3. Encrypted Key and IV are sent in the request headers.
+
+### Level 5
+1. Use BurpCrypto extension - https://portswigger.net/bappstore/54f3dde6650a46d19789d19c4e2edd5f
+
+
+
 ## Solution
+
+### Universal Solution
+Edit the JS file and remove the client side regex validation of the email parameter from the js file. This validation code might not always be easy to locate in real world applications so try to solve the levels without this solution.
 
 ### Level 1 
 1. The application uses AES encryption with hardcoded keys. the encrypted text will look something like this.
@@ -97,7 +126,7 @@ function decrypt_aes(ciphertext, key="very-secure-key-", iv="very-secure-iv--"){
 ```
 
 ### Level 2
-1. The application uses AES encryption with a dynamic key and a dynamic IV. The dynamic key is sent to the server in a request header - x-secure as observed in the JS code in sript.js file. The first 16 characters of the header is the key and the next 16 characters are the IV.
+1. The application uses AES encryption with a dynamic key and a dynamic IV. The dynamic key is sent to the server in a request header - x-secure, as observed in the JS code in sript.js file. The first 16 characters of the header is the key and the next 16 characters are the IV.
 ```
 else if (document.querySelector("body > div > form").classList.contains("AES-2")){
   rand_key = generateRandomString(16)
@@ -152,8 +181,9 @@ else if (document.querySelector("body > div > form").classList.contains("RSA")){
 }
 ```
 2. Add a breakpoint in the js file at the line where encrypt_rsa function is called. Also add a break point at the line where the decrypted response is returned.
-
 3. After submitting the login form when the debugger reaches the encrypt_rsa line, edit the data variable and add your sql injection payload in the email parameter. Resume the execution in the debugger.
+![breakpoint](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/2.png)
+![breakpoint](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/3.png)
 ```
 // edit the value of data variable in the scope section in the debugger to this
 // ensure that all the inner double quotes are escaped else it will not work. 
@@ -172,7 +202,8 @@ else if (document.querySelector("body > div > form").classList.contains("AES-3")
     data = encrypt_aes(data, rand_key, rand_iv)
 }
 ```
-3. Use the 'Match and replace' feature in burp to replace the randomisation code in the js body with a hardcoded key and IV. Refresh the page. the keys and IV will now be hardcoded in the JS
+2. Use the 'Match and replace' feature in burp to replace the randomisation code in the js body with a hardcoded key and IV. Refresh the page. the keys and IV will now be hardcoded in the JS
+![match and replace](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/4.png)
 ```
 else if (document.querySelector("body > div > form").classList.contains("AES-3")){
     rand_key = 1111111111111111
@@ -181,12 +212,14 @@ else if (document.querySelector("body > div > form").classList.contains("AES-3")
     data = encrypt_aes(data, rand_key, rand_iv)
 }
 ```
-5. We can now decrypt the new encrypted request with our hardcoded key simmilar to Level 2. The resulting plaintext can also be re-encrypted with our hardcoded key and IV.
-6. The response can also be decrypted simmilar to level 2.
+3. We can now decrypt the new encrypted request with our hardcoded key simmilar to Level 2. The resulting plaintext can also be re-encrypted with our hardcoded key and IV.
+4. The response can also be decrypted simmilar to level 2.
 
 ### Level 5
 1. Install BurpCrypto extension in burpsuite
 2. Use the encrypt_aes and decrypt_aes functions in the script.js file along with the crypto-js code to make a custom js code. You can use the provided code in Burpcrypto.js file. Copy this code and paste it in the BurpCrypto -> ExecJS editor.
+![match and replace](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/4.png)
 3. Enter the JS Method Name as encrypt_aes. Select JS engine as HtmlUnit. Click on add processor and name it encrypt_aes.
-4. Add the login request to intruder. add the entire body as a payload. Use a password wordlist as payload. add the following prefix and suffix as shown below. Also add a burp extension processor and click on the encrypt_aes processor. 
+4. Add the login request to intruder. Use a password wordlist as payload. add the following prefix and suffix as shown below. Also add a burp extension processor and click on the encrypt_aes processor.
+![match and replace](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/5.png)
 5. Run the intruder attack and grep the response body to check which request contains the successful login response.
