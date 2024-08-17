@@ -114,25 +114,79 @@ x-secure: 4eIjTaqyyLyRIU53vUz3epWgC9inhgMN
 
 %2BJfWvCZjOX572PT7i1TM5MJIetsHClp87NnNY4hYsnOh5AlzHG%2FmGkuvFsvY0OQV
 ```
-4. Using this key and iv from the header decrypt the body with AES-128 algorithm CBC mode. Use Cyberchef to perform various kinds of encryption and decryption - [CyberChef](https://cyberchef.org/)
-5. Manipulate the value of email in the plaintext and add your payload.
-6. The encrypted response contains 2 parts separated by a pine(|) as observed in the script.js file. The first part is the key and IV. The 2nd part is the encrypted response body.
+2. Using this key and iv from the header decrypt the body with AES-128 algorithm CBC mode. Use Cyberchef to perform various kinds of encryption and decryption - [CyberChef](https://cyberchef.org/)
+3. Manipulate the value of email in the plaintext and add your payload.
+4. The encrypted response contains 2 parts separated by a pine(|) as observed in the script.js file. The first part is the key and IV. The 2nd part is the encrypted response body.
 ```
 if (document.querySelector("body > div > form").classList.contains("AES-2") | document.querySelector("body > div > form").classList.contains("AES-3")){
   data = data_res.split("|")
   res = decrypt_aes(data[1], data[0].slice(0,16), data[0].slice(16,32));
 }
 ```
-8. Decrypt the 2nd part of the response body using the key and value in the first part of the response body. Notice that the decrypted response contains the sql error confirming the sql injection vulnerability.
+5. Decrypt the 2nd part of the response body using the key and value in the first part of the response body. Notice that the decrypted response contains the sql error confirming the sql injection vulnerability.
 
 ### Level 3
 1. The application uses Asymetric RSA encryption so we will not be able to decrypt the request body.
+```
+function encrypt_rsa(plaintext){
+    var pubkey = '-----BEGIN PUBLIC KEY-----MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrWzhSSf4Z2NoSCDDnSbAwMgJ1nAdGyUnFSwkhLIe+pCJq1CIWMJK2Il/wf6QmManmUn8dSYMzRt2UmYvSmxolFOZi5KFi5YW94LUayWmEBIJUTiMjB4YURAOdWffoCa8DXX81D9WSL7TPNmfmj1pOplhKZ6dMuEbU9sOuG6sxswIDAQAB-----END PUBLIC KEY-----'
+    var public_key = forge.pki.publicKeyFromPem(pubkey);
+
+    encrypted_hex = ""
+    for(i=0; i < plaintext.length; i+=86){
+        sub_plaintext = plaintext.substr(i,86);
+        var encrypted = public_key.encrypt(forge.util.encodeUtf8(sub_plaintext), 'RSA-OAEP', {
+            md: forge.md.sha1.create(),
+        });
+        encrypted_hex += encrypted.split("")
+         .map(c => c.charCodeAt(0).toString(16).padStart(2, "0"))
+         .join("");
+    }
+    return encrypted_hex;
+}
+
+...
+
+else if (document.querySelector("body > div > form").classList.contains("RSA")){
+    data = encrypt_rsa(data);
+}
+```
 2. Add a breakpoint in the js file at the line where encrypt_rsa function is called. Also add a break point at the line where the decrypted response is returned.
-3. After submitting the login form when the debugger reaches the encrypt_rsa line, edit the data variable and add your sql injection payload in the email parameter. Resume the execution in the debugger. 
+
+3. After submitting the login form when the debugger reaches the encrypt_rsa line, edit the data variable and add your sql injection payload in the email parameter. Resume the execution in the debugger.
+```
+// edit the value of data variable in the scope section in the debugger to this
+// ensure that all the inner double quotes are escaped else it will not work. 
+
+"{\"email\":\"test@test.com'\",\"password\":\"test\"}"   
+```
 4. When the debugger reaches the return res code. You will notice that the response contains the sql error confirming the sql injection vulnerability.
 
 ### Level 4
-1. The application uses a combination of AES and RSA encryption. The request body is encrypted with a dynamic AES key and IV. then the key and IV are encrypted with an RSA key and sent in the request as a header - x-secure
-2. Use the 'Match and replace' feature in burp to replace the randomisation code in the js body with a hardcoded key and IV. Refresh the page.
-3. We can now decrypt the new encrypted request with our hardcoded key simmilar to Level 2. The plain text can also be encrypted with our hardcoded key and IV.
-4. The response can also be decrypted simmilar to level 2.
+1. The application uses a combination of AES and RSA encryption. The request body is encrypted with a dynamic AES key and IV. then the key and IV are encrypted with an RSA key and sent in the request as a header - x-secure.
+```
+else if (document.querySelector("body > div > form").classList.contains("AES-3")){
+    rand_key = generateRandomString(16)
+    rand_iv = generateRandomString(16)
+    headers["x-secure"] = encrypt_rsa(rand_key+rand_iv)
+    data = encrypt_aes(data, rand_key, rand_iv)
+}
+```
+3. Use the 'Match and replace' feature in burp to replace the randomisation code in the js body with a hardcoded key and IV. Refresh the page. the keys and IV will now be hardcoded in the JS
+```
+else if (document.querySelector("body > div > form").classList.contains("AES-3")){
+    rand_key = 1111111111111111
+    rand_iv = 1111111111111111
+    headers["x-secure"] = encrypt_rsa(rand_key+rand_iv)
+    data = encrypt_aes(data, rand_key, rand_iv)
+}
+```
+5. We can now decrypt the new encrypted request with our hardcoded key simmilar to Level 2. The resulting plaintext can also be re-encrypted with our hardcoded key and IV.
+6. The response can also be decrypted simmilar to level 2.
+
+### Level 5
+1. Install BurpCrypto extension in burpsuite
+2. Use the encrypt_aes and decrypt_aes functions in the script.js file along with the crypto-js code to make a custom js code. You can use the provided code in Burpcrypto.js file. Copy this code and paste it in the BurpCrypto -> ExecJS editor.
+3. Enter the JS Method Name as encrypt_aes. Select JS engine as HtmlUnit. Click on add processor and name it encrypt_aes.
+4. Add the login request to intruder. add the entire body as a payload. Use a password wordlist as payload. add the following prefix and suffix as shown below. Also add a burp extension processor and click on the encrypt_aes processor. 
+5. Run the intruder attack and grep the response body to check which request contains the successful login response.
