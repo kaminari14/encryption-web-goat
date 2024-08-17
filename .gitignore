@@ -164,3 +164,4 @@ cython_debug/
 .idea/
 
 script_bck.js
+config.ini
