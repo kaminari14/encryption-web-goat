@@ -6,14 +6,14 @@ Here is a simple diagram demonstrating the client side encryption process in a w
 ![diagram](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/diagram.png)
 
 
-This repository contains a web application that I use to demonstrate encryption bypass techniques. Please go through the Installation and setup steps mentioned below if you want to try it out. Skip to the Solutions section below if you are here to find techniques to bypass encryption.
-
+This repository contains a web application that I use to demonstrate encryption bypass techniques. Please go through the [Installation and setup](#installation-and-setup) steps mentioned below if you want to try it out. Skip to the [Solution](#solution) section below if you are here to find techniques to bypass encryption.
 
 
 ## Pre-Requisites (Mentioned versions are the ones I have tested with. It should work with different versions around the mentioned versions)
 * Python 3.11.5
 * Python Packages - Mentioned in requirements.txt
 * PostgreSQL 15.4
+
 
 ## Installation and Setup 
 
@@ -30,8 +30,9 @@ python -m virtualenv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
-3. Setup the database. Assuming that there is a default user postgres use the below commands.
+3. Setup the database. Assuming that there is a default user postgres use the below commands. You can change the name of the database in the below commands but the same name will have to be changed in the db.sql file.
 ```
+> systemctl restart postgreql.service     #start postgres service
 > psql -U postgres
 postgres=# create database test_db_73ccdee6;
 postgres=# create user test_user_73ccdee6 WITH PASSWORD '<password>';
@@ -65,6 +66,18 @@ WARNING: This is a development server. Do not use it in a production deployment.
  * Running on http://192.168.0.114:5000
 Press CTRL+C to quit
 ```
+
+## Uninstallation
+1. Remove the database & user that was created from the database by running the below queries
+```
+drop database test_db_73ccdee6 ;
+drop user test_user_73ccdee6 ;
+```
+2. remove the cloned repository
+```
+rm -rf encryption-web-goat/
+```
+
 
 ## Challenges
 There is 1 sql injection vulnerability in the login page in the email parameter.
