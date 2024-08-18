@@ -337,3 +337,7 @@ sqlmap -r request.txt --proxy=http://192.168.0.114:8085 -dbs -tables
 ## Roadmap
 1. New Level for Obfuscated JS Code
 2. Video POCs(maybe!?).
+
+
+## References
+Frontend Boilerplate from - https://github.com/GNiruthian/Login-Page-using-html-css
