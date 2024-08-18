@@ -1,6 +1,10 @@
 ## Introduction
 Request & Response encryption in an HTTP request is essentially just a client side protection mechanism and should be treated just as an additional layer of security. The logic to encrypt and in many cases the logic to decrypt the data is present in the js code. It is fundamentally not possible for a web application to encrypt request data without having the encryption keys and encryption logic present in the JS code. Simmilarly it is fundamentally not possible for a web application to decrypt the response data without it not having the decryption keys and decryption logic in the JS code. Armed with this JS code and given enough time any attacker can decrypt the encrypted body and/or encrypt malicious payloads to be sent in the request body.
 
+Here is a simple diagram demonstrating the client side encryption process in a web application.
+![diagram](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/diagram.png)
+
+
 This repository contains a web application that I use to demonstrate encryption bypass techniques. Please go through the Installation and setup steps mentioned below if you want to try it out. Skip to the Solutions section below if you are here to find techniques to bypass encryption.
 
 ## Installation and Setup
@@ -58,6 +62,15 @@ enc = AES
 ```
 **Target** - Run a dictionary attack or brute force attack to obtain the password for admin@test.com
 
+### Level 6 - Exploit the SQL Injection Vulnerability
+This can be done with any encryption mode however for this challenger we will stick to the encryption used in the level 1 challenge.
+Set the encryption to AES in the config.ini file
+```
+[base]
+enc = AES
+```
+**Target** - Enumerate the database by exploiting the sql injection vulnerability using Sqlmap
+
 
 ## Hints
 ### Level 1
@@ -82,6 +95,8 @@ enc = AES
 ### Level 5
 1. Use BurpCrypto extension - https://portswigger.net/bappstore/54f3dde6650a46d19789d19c4e2edd5f
 
+### Level 6
+1. Pass SQLmap through a custom http proxy that will encrypt the request and decrypt the response.
 
 
 ## Solution
@@ -202,7 +217,8 @@ else if (document.querySelector("body > div > form").classList.contains("AES-3")
     data = encrypt_aes(data, rand_key, rand_iv)
 }
 ```
-2. Use the 'Match and replace' feature in burp to replace the randomisation code in the js body with a hardcoded key and IV. Refresh the page. the keys and IV will now be hardcoded in the JS
+2. Use the 'Match and replace' feature in burp to replace the randomisation code in the js body with a hardcoded key and IV. Refresh the page. the keys and IV will now be hardcoded in the JS.
+
 ![match and replace](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/4.png)
 ```
 else if (document.querySelector("body > div > form").classList.contains("AES-3")){
@@ -223,3 +239,22 @@ else if (document.querySelector("body > div > form").classList.contains("AES-3")
 4. Add the login request to intruder. Use a password wordlist as payload. add the following prefix and suffix as shown below. Also add a burp extension processor and click on the encrypt_aes processor.
 ![match and replace](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/5.png)
 5. Run the intruder attack and grep the response body to check which request contains the successful login response.
+
+### Level 6
+1. Create a simple custom HTTP proxy using any programming language.
+2. In the proxy code add code to encrypt the request before forwarding the request to the host, so that sqlmap can send unencrypted requests.
+3. add code to decrypt the response in the proxy before returning the response to the user, so that sqlmap can understand the response.
+4. I have already made a similar script in python. take a look at enc_proxy.py file in the repository. run the script using the following command.
+```
+#usage
+python enc_proxy.py --target <target hostname/ip>:<target pot> --port <proxy port>
+
+$example
+python enc_proxy.py --target 192.168.0.114:5000 --port 8085
+```
+5. Once the proxy is running pass the sqlmap through this proxy. Use the request with unencrypted request body in the sqlmap -r parameter 
+```
+sqlmap -r request.txt --proxy=http://192.168.0.114:8085 -dbs -tables
+```
+6. This is how it works
+![sqlmap script](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/sqlmap_script.jpg)
