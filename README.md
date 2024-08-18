@@ -2,6 +2,7 @@
 Request & Response encryption in an HTTP request is essentially just a client side protection mechanism and should be treated just as an additional layer of security. The logic to encrypt and in many cases the logic to decrypt the data is present in the js code. It is fundamentally not possible for a web application to encrypt request data without having the encryption keys and encryption logic present in the JS code. Simmilarly it is fundamentally not possible for a web application to decrypt the response data without it not having the decryption keys and decryption logic in the JS code. Armed with this JS code and given enough time any attacker can decrypt the encrypted body and/or encrypt malicious payloads to be sent in the request body.
 
 Here is a simple diagram demonstrating the client side encryption process in a web application.
+
 ![diagram](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/diagram.png)
 
 
@@ -11,7 +12,7 @@ This repository contains a web application that I use to demonstrate encryption 
 
 
 ## Challenges
-There is 1 sql injection vulnerability in the application in the login page in the email parameter
+There is 1 sql injection vulnerability in the login page in the email parameter.
 
 ### Level 0 - No encryption
 Set the encryption to none in the config.ini file
@@ -197,7 +198,9 @@ else if (document.querySelector("body > div > form").classList.contains("RSA")){
 ```
 2. Add a breakpoint in the js file at the line where encrypt_rsa function is called. Also add a break point at the line where the decrypted response is returned.
 3. After submitting the login form when the debugger reaches the encrypt_rsa line, edit the data variable and add your sql injection payload in the email parameter. Resume the execution in the debugger.
+
 ![breakpoint](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/2.png)
+
 ![breakpoint](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/3.png)
 ```
 // edit the value of data variable in the scope section in the debugger to this
@@ -234,9 +237,11 @@ else if (document.querySelector("body > div > form").classList.contains("AES-3")
 ### Level 5
 1. Install BurpCrypto extension in burpsuite
 2. Use the encrypt_aes and decrypt_aes functions in the script.js file along with the crypto-js code to make a custom js code. You can use the provided code in Burpcrypto.js file. Copy this code and paste it in the BurpCrypto -> ExecJS editor.
+
 ![match and replace](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/4.png)
 3. Enter the JS Method Name as encrypt_aes. Select JS engine as HtmlUnit. Click on add processor and name it encrypt_aes.
 4. Add the login request to intruder. Use a password wordlist as payload. add the following prefix and suffix as shown below. Also add a burp extension processor and click on the encrypt_aes processor.
+
 ![match and replace](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/5.png)
 5. Run the intruder attack and grep the response body to check which request contains the successful login response.
 
@@ -257,4 +262,10 @@ python enc_proxy.py --target 192.168.0.114:5000 --port 8085
 sqlmap -r request.txt --proxy=http://192.168.0.114:8085 -dbs -tables
 ```
 6. This is how it works
+
 ![sqlmap script](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/sqlmap_script.jpg)
+
+
+## Roadmap
+1. New Level for Obfuscated JS Code
+2. Video POCs(maybe!?).
