@@ -307,10 +307,12 @@ else if (document.querySelector("body > div > form").classList.contains("AES-3")
 2. Use the encrypt_aes and decrypt_aes functions in the script.js file along with the crypto-js code to make a custom js code. You can use the provided code in Burpcrypto.js file. Copy this code and paste it in the BurpCrypto -> ExecJS editor.
 
 ![match and replace](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/6.png)
+
 3. Enter the JS Method Name as encrypt_aes. Select JS engine as HtmlUnit. Click on add processor and name it encrypt_aes.
 4. Add the login request to intruder. Use a password wordlist as payload. add the following prefix and suffix as shown below. Also add a burp extension processor and click on the encrypt_aes processor.
 
 ![match and replace](https://github.com/kaminari14/encryption-web-goat/blob/main/POC/5.png)
+
 5. Run the intruder attack and grep the response body to check which request contains the successful login response.
 
 ### Level 6
