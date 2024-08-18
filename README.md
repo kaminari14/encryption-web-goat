@@ -123,7 +123,7 @@ enc = AES-3
 **Target** - Find the sql injection vulnerability
 
 ### Level 5 - Brute force the password
-This can be done with any encryption mode however for this challenger we will stick to the encryption used in the level 1 challenge.
+This can be done with any encryption mode however for this challenge we will stick to the encryption used in the level 1 challenge.
 Set the encryption to AES in the config.ini file
 ```
 [base]
@@ -132,7 +132,7 @@ enc = AES
 **Target** - Run a dictionary attack or brute force attack to obtain the password for admin@test.com
 
 ### Level 6 - Exploit the SQL Injection Vulnerability
-This can be done with any encryption mode however for this challenger we will stick to the encryption used in the level 1 challenge.
+This can be done with any encryption mode however for this challenge we will stick to the encryption used in the level 1 challenge.
 Set the encryption to AES in the config.ini file
 ```
 [base]
