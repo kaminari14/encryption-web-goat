@@ -8,8 +8,63 @@ Here is a simple diagram demonstrating the client side encryption process in a w
 
 This repository contains a web application that I use to demonstrate encryption bypass techniques. Please go through the Installation and setup steps mentioned below if you want to try it out. Skip to the Solutions section below if you are here to find techniques to bypass encryption.
 
-## Installation and Setup
 
+
+## Pre-Requisites (Mentioned versions are the ones I have tested with. It should work with different versions around the mentioned versions)
+* Python 3.11.5
+* Python Packages - Mentioned in requirements.txt
+* PostgreSQL 15.4
+
+## Installation and Setup 
+
+### Disclaimer - Please run the application in a sandboxed environment. Make sure that the flask server is not exposed to the internet as it contains an SQL injection vulnerability. 
+
+1. Clone the repository
+```
+git clone git@github.com:kaminari14/encryption-web-goat.git
+cd encryption-web-goat/
+```
+2. It is recommended to run the application in a virtual environment. Install the required python modules
+```
+python -m virtualenv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+3. Setup the database. Assuming that there is a default user postgres use the below commands.
+```
+> psql -U postgres
+postgres=# create database test_db_73ccdee6;
+postgres=# create user test_user_73ccdee6 WITH PASSWORD '<password>';
+postgres=# \c test_db_73ccdee6
+test_db_73ccdee6=# \i db.sql
+// importing above db.sql file creates a user called test_user_73ccdee6, creates the user table in the database and adds values in the database. 
+```
+4. Setup the database config in config_.ini file
+```
+[base]
+enc = None
+
+[database]
+username = test_user_73ccdee6
+password = <password>
+database_name = test_db_73ccdee6
+ip = <listening ip address>
+port = <listening Port number>
+```
+5. Run the flask application. This needs to be rerun everytime the config file is changed.
+```
+flask --app 'main:start_server("config_.ini")' run --host=0.0.0.0
+```
+6. Access the application using any of the ips in the response of the above command
+```
+ * Serving Flask app 'main:start_server("config_.ini")'
+ * Debug mode: off
+WARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://192.168.0.114:5000
+Press CTRL+C to quit
+```
 
 ## Challenges
 There is 1 sql injection vulnerability in the login page in the email parameter.
